@@ -4,6 +4,8 @@ import org.junit.Test
 
 import java.lang.reflect.InvocationTargetException
 
+import com.cloudbees.groovy.cps.impl.FieldSerializationException
+
 /**
  *
  *
@@ -65,6 +67,24 @@ class ContinuableTest extends AbstractGroovyCpsTest {
 
         assert c.isResumable()
         assert c.run(6)==9;
+    }
+
+
+    @Test
+    void shouldIndicateWhichFieldWasNotSerializable() {
+        def s = csh.parse("""
+                def stream = System.in
+                Continuable.suspend(0);
+        """)
+
+        def c = new Continuable(s);
+        assert c.run(null) == 0
+        try {
+            roundtripSerialization(c);
+            fail()
+        } catch (FieldSerializationException e) {
+            assert e.getField() == "stream"
+        }
     }
 
     @Test
